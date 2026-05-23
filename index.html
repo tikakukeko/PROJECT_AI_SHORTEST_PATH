@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="UNIB SmartRoute – Sistem navigasi jalur terpendek kampus Universitas Bengkulu berbasis A* Algorithm dengan tampilan peta interaktif.">
+    <title>UNIB SmartRoute – Shortest Path Navigation System</title>
+
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Google Fonts: Inter + Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="light-mode">
+<div id="app">
+
+    <!-- ======================================================
+         LOADING OVERLAY
+         ====================================================== -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="spinner-wrap">
+            <div class="spinner"></div>
+            <div class="spinner-inner"></div>
+        </div>
+        <p id="loadingText">Mencari rute terbaik...</p>
+    </div>
+
+    <!-- ======================================================
+         TOAST CONTAINER
+         ====================================================== -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- ======================================================
+         MOBILE TOGGLE
+         ====================================================== -->
+    <button id="mobileToggle" class="mobile-toggle" aria-label="Buka Panel Navigasi">
+        <i class="fa-solid fa-map-marked-alt"></i>
+    </button>
+
+    <!-- ======================================================
+         FLOATING ACTIONS (right-side map controls)
+         ====================================================== -->
+    <div class="floating-actions">
+        <button id="btnThemeToggle" class="fab-btn" title="Toggle Dark Mode" aria-label="Toggle Dark Mode">
+            <i class="fa-solid fa-moon"></i>
+        </button>
+        <button id="btnMapStyle" class="fab-btn" title="Ganti Gaya Peta" aria-label="Ganti Gaya Peta">
+            <i class="fa-solid fa-layer-group"></i>
+        </button>
+        <button id="btnLocateMe" class="fab-btn" title="Lokasi Saya di Peta" aria-label="Lokasi Saya">
+            <i class="fa-solid fa-crosshairs"></i>
+        </button>
+    </div>
+
+    <!-- ======================================================
+         SIDEBAR
+         ====================================================== -->
+    <aside class="sidebar" id="mainSidebar">
+        <div class="sidebar-inner">
+
+            <!-- Brand Header -->
+            <header class="brand">
+                <div class="brand-icon-wrap">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>UNIB <span class="accent">SmartRoute</span></h1>
+                    <p>Shortest Path Navigation System</p>
+                </div>
+            </header>
+
+            <!-- Navigation Controller -->
+            <div class="nav-controller">
+
+                <!-- Input Card: Start & End -->
+                <div class="input-card">
+                    <!-- Start Field -->
+                    <div class="input-field">
+                        <div class="field-icon-wrap">
+                            <div class="field-icon start"></div>
+                            <div class="field-line"></div>
+                        </div>
+                        <div class="field-content">
+                            <div class="label-row">
+                                <label for="startNode">TITIK AWAL</label>
+                                <button id="btnMyLocation" class="loc-btn" title="Gunakan lokasi GPS Anda">
+                                    <i class="fa-solid fa-location-crosshairs"></i> Lokasi Saya
+                                </button>
+                            </div>
+                            <select id="startNode" aria-label="Pilih titik awal">
+                                <option value="" disabled selected>Pilih Lokasi Awal...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Divider + Swap -->
+                    <div class="divider">
+                        <button id="btnSwap" class="swap-btn" title="Tukar titik awal dan tujuan" aria-label="Tukar lokasi">
+                            <i class="fa-solid fa-arrow-down-up-across-line"></i>
+                        </button>
+                    </div>
+
+                    <!-- End Field -->
+                    <div class="input-field">
+                        <div class="field-icon-wrap">
+                            <div class="field-icon end"></div>
+                        </div>
+                        <div class="field-content">
+                            <label for="endNode">TITIK TUJUAN</label>
+                            <select id="endNode" aria-label="Pilih titik tujuan">
+                                <option value="" disabled selected>Pilih Lokasi Tujuan...</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Travel Mode Selector -->
+                <div class="mode-selector" role="radiogroup" aria-label="Mode perjalanan">
+                    <label class="mode-tab">
+                        <input type="radio" name="travelMode" value="walking" checked>
+                        <div class="tab-content">
+                            <i class="fa-solid fa-person-walking icon"></i>
+                            <span>Jalan Kaki</span>
+                        </div>
+                    </label>
+                    <label class="mode-tab">
+                        <input type="radio" name="travelMode" value="motor">
+                        <div class="tab-content">
+                            <i class="fa-solid fa-motorcycle icon"></i>
+                            <span>Motor</span>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Find Route Button -->
+                <button id="btnFindPath" class="primary-btn">
+                    <i class="fa-solid fa-route"></i>&nbsp; CARI RUTE TERPENDEK
+                </button>
+            </div>
+
+            <!-- ================================================
+                 WELCOME PANEL (EMPTY STATE)
+                 ================================================ -->
+            <div id="welcomePanel" class="welcome-panel">
+                <div class="w-icon-box">
+                    <i class="fa-solid fa-location-arrow"></i>
+                </div>
+                <h3>Mulai Navigasi</h3>
+                <p>Silakan pilih titik awal dan tujuan Anda pada form di atas untuk melihat rute terbaik.</p>
+            </div>
+
+            <!-- ================================================
+                 RESULTS SECTION
+                 ================================================ -->
+            <div id="results" class="results-container hidden">
+
+                <!-- Active Route Banner -->
+                <div class="route-header" id="routeHeader">
+                    <div class="route-header-icon">
+                        <i class="fa-solid fa-route"></i>
+                    </div>
+                    <div class="route-header-text">
+                        <div class="route-header-label">Rute Aktif</div>
+                        <div class="route-header-value" id="routeSummary">–</div>
+                    </div>
+                </div>
+
+                <!-- Metric Cards: Distance + Time -->
+                <div class="metrics-row">
+                    <div class="metric-item">
+                        <div class="m-label"><i class="fa-solid fa-arrows-left-right"></i> Jarak</div>
+                        <div class="m-val-group">
+                            <span class="m-val" id="totalDistance">0</span>
+                            <span class="m-unit">meter</span>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="m-label"><i class="fa-regular fa-clock"></i> Estimasi</div>
+                        <div class="m-val-group">
+                            <span class="m-val" id="estimatedTime">0</span>
+                            <span class="m-unit">menit</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Algorithm Stats -->
+                <div class="algo-stats">
+                    <div class="section-label">Statistik Algoritma</div>
+                    <div class="stat-grid">
+                        <div class="stat-box">
+                            <span class="s-label">Algoritma</span>
+                            <span class="s-val">A* Search</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="s-label">Komputasi</span>
+                            <span class="s-val" id="computeTime">– ms</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="s-label">Total Graph</span>
+                            <span class="s-val" id="graphInfo">–</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="s-label">Mode</span>
+                            <span class="s-val" id="modeInfo">–</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step-by-step Directions -->
+                <div class="path-details">
+                    <div class="section-label">Panduan Rute</div>
+                    <div id="pathList" class="path-steps"></div>
+                </div>
+
+                <!-- Info Card -->
+                <div class="info-card" id="infoCard">
+                    <i class="fa-solid fa-lightbulb info-icon" style="color:#fbbf24;"></i>
+                    <p class="info-text">Pilih mode <strong>Motor</strong> atau <strong>Jalan Kaki</strong>. Estimasi waktu otomatis dihitung berdasarkan mode yang dipilih.</p>
+                </div>
+
+                <!-- Reset Button -->
+                <button id="btnReset" class="secondary-btn">
+                    <i class="fa-solid fa-rotate-left"></i> Hapus Rute
+                </button>
+            </div>
+
+            <!-- Footer -->
+            <footer class="academic-footer">
+                <span><i class="fa-solid fa-graduation-cap"></i> Universitas Bengkulu</span>
+            </footer>
+
+        </div><!-- /sidebar-inner -->
+    </aside>
+
+    <!-- ======================================================
+         MAP CONTAINER
+         ====================================================== -->
+    <main id="map-wrap" role="main" aria-label="Peta Navigasi UNIB">
+        <div id="map"></div>
+    </main>
+
+</div><!-- /app -->
+
+<!-- Leaflet JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<!-- Leaflet Polyline Decorator (direction arrows) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-polylinedecorator/1.1.1/leaflet.polylineDecorator.min.js"></script>
+
+<!-- Main Script -->
+<script src="script.js"></script>
+</body>
+</html>

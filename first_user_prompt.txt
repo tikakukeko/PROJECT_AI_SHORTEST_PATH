@@ -1,0 +1,83 @@
+<USER_REQUEST>
+Buat pengembangan dan improvement pada project web GIS “UNIB SmartRoute – Shortest Path Navigation System” tanpa mengubah struktur utama project, tanpa menghapus fitur yang sudah ada, dan tanpa merusak tampilan maupun logic existing.
+
+Fokus hanya pada enhancement UI/UX, visualisasi route, dan penambahan fitur pendukung agar project terlihat lebih profesional untuk presentasi UAS.
+
+Hal yang perlu ditambahkan:
+
+1. Perbaiki visual route pada map
+- Buat garis route lebih smooth dan modern
+- Tambahkan warna berbeda untuk mode jalan kaki dan motor
+- Tambahkan marker start dan destination yang lebih jelas
+- Tambahkan efek shadow atau glow pada route
+
+2. Tambahkan panel informasi algoritma
+Di sidebar tampilkan:
+- Algoritma yang digunakan (Dijkstra/A*)
+- Total jarak
+- Estimasi waktu
+- Jumlah node yang dilalui
+- Daftar lokasi/node yang dilewati
+
+3. Tambahkan direction step-by-step
+Contoh:
+- Dari Gerbang Depan UNIB lurus 200m
+- Belok kanan menuju Lapangan Basket
+- Lanjut menuju FT UNIB
+
+4. Tambahkan loading state
+Saat tombol “Cari Rute” ditekan:
+- tampilkan loading spinner
+- tampilkan teks “Mencari rute terbaik...”
+
+5. Tambahkan notifikasi modern
+Gunakan toast notification:
+- Rute berhasil ditemukan
+- Lokasi tidak ditemukan
+- Error saat mencari rute
+
+6. Tingkatkan UI modern
+- Gunakan glassmorphism ringan
+- Tambahkan hover animation
+- Tambahkan smooth transition
+- Pertahankan warna utama biru existing project
+
+7. Tambahkan responsif mobile
+- Sidebar bisa collapse di layar kecil
+- Tombol tetap nyaman ditekan di HP
+- Map fullscreen di mobile
+
+8. Tambahkan statistik routing
+Tampilkan:
+- Total node graph
+- Total edge
+- Waktu komputasi algoritma
+
+9. Tambahkan popup informasi lokasi
+Saat marker diklik tampilkan:
+- Nama lokasi
+- Deskripsi singkat
+- Koordinat lokasi
+
+10. Tambahkan current location user
+Gunakan navigator.geolocation untuk:
+- mendeteksi posisi user
+- menampilkan marker lokasi user
+- opsi gunakan lokasi saya sebagai titik awal
+
+PENTING:
+- Jangan menghapus fitur existing
+- Jangan mengubah struktur utama project
+- Jangan mengubah nama file utama
+- Jangan merusak routing yang sudah berjalan
+- Pertahankan seluruh logic yang sudah ada
+- Hanya lakukan enhancement dan improvement
+- Gunakan code yang clean dan modular
+- Pastikan semua fitur compatible dengan Leaflet.js
+
+Tujuan akhir:
+Membuat project terlihat seperti aplikasi navigasi kampus profesional modern untuk presentasi UAS.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-05-23T21:27:01+07:00.
+</ADDITIONAL_METADATA>
