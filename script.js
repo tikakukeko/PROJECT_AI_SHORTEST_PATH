@@ -127,10 +127,13 @@ addTwoWayEdge('simpang_gb2',     'gb2');
 //   TIDAK  : simpang_upatik → gerbang_masuk_belakang  (tidak bisa balik lewat jalur kanan)
 //   TIDAK  : simpang_gsg   → gerbang_masuk_belakang   (tidak bisa keluar lewat pintu masuk)
 //
-// Jalur keluar belakang (gerbang_keluar_belakang) tetap dua arah dari dalam kampus
-addEdge('gerbang_masuk_belakang', 'simpang_upatik');  // ONE-WAY: masuk → belok kanan ke tengah
-addEdge('gerbang_masuk_belakang', 'simpang_gsg');     // ONE-WAY: masuk → belok kanan langsung ke GB5/GSG/FT
-addTwoWayEdge('gerbang_masuk_belakang', 'gerbang_keluar_belakang'); // pintu keluar dua arah
+// Jalur keluar belakang (gerbang_keluar_belakang):
+//   - Bisa dicapai dari dalam kampus via simpang_gsg (jalan keluar)
+//   - gerbang_masuk_belakang ↔ gerbang_keluar_belakang tetap dua arah (putar balik)
+addEdge('gerbang_masuk_belakang', 'simpang_upatik');           // ONE-WAY: masuk → belok kanan ke tengah
+addEdge('gerbang_masuk_belakang', 'simpang_gsg');              // ONE-WAY: masuk → belok kanan langsung ke GB5/GSG/FT
+addTwoWayEdge('gerbang_masuk_belakang', 'gerbang_keluar_belakang'); // putar balik antar dua gerbang
+addEdge('simpang_gsg', 'gerbang_keluar_belakang');             // ONE-WAY: dari kampus → keluar belakang
 
 // ── Area Tengah → Timur (GSG / GB / FT) ─────────────────────
 //
@@ -773,7 +776,12 @@ function handleMyLocation() {
                     if (d < minDist) { minDist = d; nearestNode = n.id; }
                 }
             });
-            edges.push(['user_loc', nearestNode]);
+            // Daftarkan user_loc ke directed graph (adj) agar A* bisa menelusurinya
+            adj['user_loc'] = adj['user_loc'] || [];
+            adj['user_loc'].push(nearestNode);   // user_loc → nearest (untuk cari rute keluar)
+            adj[nearestNode] = adj[nearestNode] || [];
+            adj[nearestNode].push('user_loc');   // nearest → user_loc (agar bisa dijadikan tujuan)
+            edges.push(['user_loc', nearestNode], [nearestNode, 'user_loc']); // sinkron edges
 
             // Update dropdown
             const s = document.getElementById('startNode');
