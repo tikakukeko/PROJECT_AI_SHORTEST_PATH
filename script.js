@@ -849,16 +849,41 @@ async function init() {
     });
 
     // ── Mobile Toggle (bottom sheet) ─────────────────────────
-    document.getElementById('mobileToggle').addEventListener('click', () => {
-        const sidebar = document.getElementById('mainSidebar');
-        sidebar.classList.toggle('open');
+    const mobileToggleBtn = document.getElementById('mobileToggle');
+    const mobileBackdrop  = document.getElementById('sidebarBackdrop');
+    const mainSidebar     = document.getElementById('mainSidebar');
+
+    function openSidebar() {
+        mainSidebar.classList.add('open');
+        mobileToggleBtn.classList.add('panel-open');
+        if (mobileBackdrop) {
+            mobileBackdrop.style.display = 'block';
+            requestAnimationFrame(() => mobileBackdrop.classList.add('visible'));
+        }
+        setTimeout(() => { if (map) map.invalidateSize(); }, 500);
+    }
+
+    function closeSidebar() {
+        mainSidebar.classList.remove('open');
+        mobileToggleBtn.classList.remove('panel-open');
+        if (mobileBackdrop) {
+            mobileBackdrop.classList.remove('visible');
+            setTimeout(() => { mobileBackdrop.style.display = 'none'; }, 310);
+        }
+        setTimeout(() => { if (map) map.invalidateSize(); }, 500);
+    }
+
+    mobileToggleBtn.addEventListener('click', () => {
+        mainSidebar.classList.contains('open') ? closeSidebar() : openSidebar();
     });
 
-    // Click outside sidebar closes it on mobile
+    if (mobileBackdrop) {
+        mobileBackdrop.addEventListener('click', closeSidebar);
+    }
+
+    // Tap on map closes sidebar on mobile
     document.getElementById('map-wrap').addEventListener('click', () => {
-        if (window.innerWidth <= 768) {
-            document.getElementById('mainSidebar').classList.remove('open');
-        }
+        if (window.innerWidth <= 768) closeSidebar();
     });
 
     // ── Dark Mode Toggle ──────────────────────────────────────

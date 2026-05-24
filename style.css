@@ -1407,15 +1407,91 @@ body.dark-mode .fab-btn {
 /* ============================================================
    RESPONSIVE — MOBILE BOTTOM SHEET
    ============================================================ */
+
+/* ── Sidebar Backdrop Overlay (mobile only) ─────────────────── */
+#sidebarBackdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 1090;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+#sidebarBackdrop.visible {
+    opacity: 1;
+}
+
+/* ── Small phone (max 480px) ─────────────────────────────────── */
+@media (max-width: 480px) {
+    .brand-text h1  { font-size: 1rem; }
+    .brand-text p   { font-size: 0.7rem; }
+    .primary-btn    { font-size: 0.8rem; padding: 12px 16px; }
+    .secondary-btn  { font-size: 0.8rem; }
+    .m-val          { font-size: 1.2rem; }
+    .s-val          { font-size: 0.78rem; }
+    .step-name      { font-size: 0.78rem; }
+}
+
+/* ── Main Mobile Breakpoint (max 768px) ──────────────────────── */
 @media (max-width: 768px) {
+
+    /* Full-screen app layout: map behind, sidebar on top */
     #app {
-        flex-direction: column-reverse;
+        flex-direction: column;
+        position: relative;
     }
 
+    /* ── Map fills full screen ───────────────────────── */
+    #map-wrap {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* ── Show mobile toggle FAB ──────────────────────── */
     .mobile-toggle {
         display: flex;
+        position: fixed;
+        bottom: max(24px, env(safe-area-inset-bottom, 24px));
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2100;
+        width: auto;
+        min-width: 56px;
+        height: 52px;
+        padding: 0 20px;
+        border-radius: 100px;
+        gap: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        font-family: 'Inter', sans-serif;
+        white-space: nowrap;
+        box-shadow: 0 8px 28px rgba(14, 165, 233, 0.45), 0 4px 12px rgba(0,0,0,0.2);
     }
 
+    .mobile-toggle::after {
+        content: 'Navigasi';
+        font-size: 0.82rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+    }
+
+    .mobile-toggle.panel-open::after {
+        content: 'Tutup';
+    }
+
+    .mobile-toggle.panel-open {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        box-shadow: 0 8px 28px rgba(239, 68, 68, 0.45), 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    /* ── Sidebar as bottom sheet ─────────────────────── */
     .sidebar {
         position: fixed;
         bottom: 0;
@@ -1423,51 +1499,151 @@ body.dark-mode .fab-btn {
         right: 0;
         width: 100%;
         height: auto;
-        max-height: 88vh;
+        max-height: 90vh;
         min-width: unset;
         border: none;
         border-top: 1px solid var(--border);
         border-radius: 24px 24px 0 0;
         transform: translateY(100%);
         transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
-        box-shadow: 0 -12px 40px rgba(0,0,0,0.15);
+        box-shadow: 0 -12px 48px rgba(0,0,0,0.2);
         animation: none;
+        z-index: 1100;
+        overflow: hidden;
     }
 
+    /* Drag handle pill at top of sheet */
     .sidebar::before {
         content: '';
         display: block;
-        width: 40px;
+        width: 44px;
         height: 4px;
         background: var(--border-strong);
-        border-radius: 4px;
-        margin: 12px auto 0;
+        border-radius: 100px;
+        margin: 14px auto 0;
+        flex-shrink: 0;
     }
 
+    /* Open state */
     .sidebar.open {
         transform: translateY(0);
     }
 
+    /* Make sidebar content scrollable */
     .sidebar-inner {
-        padding: 16px 20px 24px;
+        padding: 14px 18px max(20px, env(safe-area-inset-bottom, 20px));
+        overflow-y: auto;
+        max-height: calc(90vh - 32px);
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
     }
 
-    .brand { margin-bottom: 16px; padding-bottom: 16px; }
-    .brand-text h1 { font-size: 1.1rem; }
+    /* ── Brand header compact ────────────────────────── */
+    .brand {
+        margin-bottom: 14px;
+        padding-bottom: 14px;
+    }
+
+    .brand-text h1  { font-size: 1.05rem; }
+    .brand-text p   { font-size: 0.7rem; }
+
+    /* ── Inputs — bigger touch targets ──────────────── */
+    select {
+        min-height: 44px;
+        font-size: 0.88rem;
+    }
+
+    /* ── Travel mode tabs ────────────────────────────── */
+    .mode-selector {
+        gap: 8px;
+    }
+
+    .mode-tab .tab-content {
+        padding: 10px 12px;
+    }
+
+    /* ── Find route button — full tap area ──────────── */
+    .primary-btn {
+        min-height: 48px;
+        font-size: 0.85rem;
+    }
+
+    /* ── Results metrics 2-column grid ──────────────── */
+    .metrics-row {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .m-val { font-size: 1.3rem; }
+
+    /* ── Algorithm stat grid compact ────────────────── */
+    .stat-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    /* ── Step list compact ───────────────────────────── */
+    .step {
+        padding: 10px 12px;
+    }
+
+    /* ── Floating action buttons (top-right) ─────────── */
+    .floating-actions {
+        top: 10px;
+        right: 10px;
+        gap: 8px;
+    }
+
+    .fab-btn {
+        width: 38px;
+        height: 38px;
+        font-size: 0.85rem;
+    }
+
+    /* ── Toast stays above bottom toggle ─────────────── */
+    .toast-container {
+        bottom: max(90px, calc(90px + env(safe-area-inset-bottom, 0px)));
+        width: calc(100% - 32px);
+        max-width: 340px;
+    }
+
+    .toast {
+        white-space: normal;
+        text-align: center;
+        font-size: 0.78rem;
+    }
+
+    /* ── Backdrop visible on mobile ──────────────────── */
+    #sidebarBackdrop {
+        display: block;
+    }
+}
+
+/* ── Landscape mobile ────────────────────────────────────────── */
+@media (max-width: 768px) and (orientation: landscape) {
+    .sidebar {
+        max-height: 95vh;
+    }
+
+    .sidebar-inner {
+        max-height: calc(95vh - 32px);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto 1fr;
+        gap: 0 16px;
+    }
+
+    .brand {
+        grid-column: 1 / -1;
+    }
 
     .floating-actions {
-        top: 12px;
-        right: 12px;
+        top: 8px;
+        right: 8px;
     }
 
-    #map-wrap {
-        position: fixed;
-        inset: 0;
-        z-index: 0;
+    .mobile-toggle {
+        bottom: max(12px, env(safe-area-inset-bottom, 12px));
     }
-
-    .metrics-row { grid-template-columns: 1fr 1fr; }
-    .m-val { font-size: 1.3rem; }
 }
 
 /* ============================================================
