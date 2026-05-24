@@ -56,56 +56,108 @@ const nodes = {
 };
 
 // ============================================================
-// 2. EDGES — UNCHANGED
+// 2. DIRECTED GRAPH — EDGES (Directed / One-Way aware)
 // ============================================================
-const edges = [
-    // Front area
-    ['gerbang','basket'], ['basket','simpang_hukum'],
-    ['simpang_hukum','gor'], ['simpang_hukum','hukum'], ['simpang_hukum','feb'],
-    ['simpang_hukum','simpang_gedung_i'],
-    ['simpang_gedung_i','simpang_pertanian'],
-    ['simpang_pertanian','pertanian'],
 
-    // Rektorat area
-    ['simpang_gedung_i','simpang_gerbang_rek'],
-    ['simpang_gerbang_rek','simpang_belakang_rek'],
-    ['simpang_belakang_rek','simpang_danau'],
-    ['simpang_danau','rektorat'], ['simpang_danau','danau'],
-    ['simpang_danau','glt'], ['simpang_danau','simpang_perpus'],
-    ['simpang_belakang_rek','simpang_perpus'],
+/**
+ * adj  : directed adjacency list  { nodeId: [neighborId, ...] }
+ * edges: flat list of [from, to] pairs — digunakan untuk info & geolocation fallback
+ */
+const adj  = {};
+const edges = []; // diisi otomatis oleh helper di bawah
 
-    // Central area (Library / FMIPA / UPATIK)
-    ['simpang_perpus','perpustakaan'], ['simpang_perpus','mushola'],
-    ['simpang_perpus','simpang_fmipa'],
-    ['simpang_fmipa','fmipa'],
-    ['simpang_fmipa','simpang_danau'],
-    ['simpang_perpus','simpang_upatik'],
-    ['simpang_upatik','simpang_gb2'],
-    ['simpang_gb2','upatik'],
-    ['simpang_gb2','gb2'],
-    ['simpang_upatik','gerbang_masuk_belakang'],
-    ['gerbang_masuk_belakang','gerbang_keluar_belakang'],
+// Inisialisasi adj untuk setiap node
+Object.keys(nodes).forEach(id => { adj[id] = []; });
 
-    // Central → East (GSG / GB area)
-    ['simpang_upatik','simpang_gsg'],
-    ['simpang_fmipa','simpang_gb34'],
-    ['simpang_fmipa','simpang_gb5'],
-    ['simpang_gsg','gsg'],
-    ['simpang_gsg','simpang_ft'],
-    ['simpang_ft','ft'],
-    ['simpang_gsg','simpang_gb34'],
-    ['simpang_gb34','gb3'], ['simpang_gb34','pkm'],
-    ['simpang_gb34','simpang_gb5'],
-    ['simpang_gb5','gb5'],
+/**
+ * addEdge(from, to) — Jalan SATU ARAH (one-way)
+ * Hanya bisa dilalui dari `from` menuju `to`.
+ */
+function addEdge(from, to) {
+    adj[from].push(to);
+    edges.push([from, to]);
+}
 
-    // East area
-    ['simpang_gb34','fkip'], ['fkip','danau_fkip'],
-    ['simpang_gb34','fkik'],
-    ['simpang_ft','stadion']
-];
+/**
+ * addTwoWayEdge(a, b) — Jalan DUA ARAH (bidirectional)
+ * Bisa dilalui dari `a` ke `b` maupun dari `b` ke `a`.
+ */
+function addTwoWayEdge(a, b) {
+    adj[a].push(b);
+    adj[b].push(a);
+    edges.push([a, b], [b, a]);
+}
+
+// ── Area Depan (Front Gate) ──────────────────────────────────
+addTwoWayEdge('gerbang',          'basket');
+addTwoWayEdge('basket',           'simpang_hukum');
+addTwoWayEdge('simpang_hukum',    'gor');
+addTwoWayEdge('simpang_hukum',    'hukum');
+addTwoWayEdge('simpang_hukum',    'feb');
+addTwoWayEdge('simpang_hukum',    'simpang_gedung_i');
+addTwoWayEdge('simpang_gedung_i', 'simpang_pertanian');
+addTwoWayEdge('simpang_pertanian','pertanian');
+
+// ── Area Rektorat ────────────────────────────────────────────
+addTwoWayEdge('simpang_gedung_i',     'simpang_gerbang_rek');
+addTwoWayEdge('simpang_gerbang_rek',  'simpang_belakang_rek');
+addTwoWayEdge('simpang_belakang_rek', 'simpang_danau');
+addTwoWayEdge('simpang_danau',        'rektorat');
+addTwoWayEdge('simpang_danau',        'danau');
+addTwoWayEdge('simpang_danau',        'glt');
+addTwoWayEdge('simpang_danau',        'simpang_perpus');
+addTwoWayEdge('simpang_belakang_rek', 'simpang_perpus');
+
+// ── Area Tengah (Perpus / FMIPA / UPATIK) ───────────────────
+addTwoWayEdge('simpang_perpus',  'perpustakaan');
+addTwoWayEdge('simpang_perpus',  'mushola');
+addTwoWayEdge('simpang_perpus',  'simpang_fmipa');
+addTwoWayEdge('simpang_fmipa',   'fmipa');
+addTwoWayEdge('simpang_fmipa',   'simpang_danau');
+addTwoWayEdge('simpang_perpus',  'simpang_upatik');
+addTwoWayEdge('simpang_upatik',  'simpang_gb2');
+addTwoWayEdge('simpang_gb2',     'upatik');
+addTwoWayEdge('simpang_gb2',     'gb2');
+
+// ── Jalur Gerbang Masuk Belakang (ONE-WAY RULES) ─────────────
+//
+// Aturan:
+//   BOLEH  : gerbang_masuk_belakang → simpang_upatik  (belok kanan menuju area tengah)
+//   BOLEH  : gerbang_masuk_belakang → simpang_gsg     (belok kanan langsung ke area GB5/GSG/FT)
+//   TIDAK  : simpang_upatik → gerbang_masuk_belakang  (tidak bisa balik lewat jalur kanan)
+//   TIDAK  : simpang_gsg   → gerbang_masuk_belakang   (tidak bisa keluar lewat pintu masuk)
+//
+// Jalur keluar belakang (gerbang_keluar_belakang) tetap dua arah dari dalam kampus
+addEdge('gerbang_masuk_belakang', 'simpang_upatik');  // ONE-WAY: masuk → belok kanan ke tengah
+addEdge('gerbang_masuk_belakang', 'simpang_gsg');     // ONE-WAY: masuk → belok kanan langsung ke GB5/GSG/FT
+addTwoWayEdge('gerbang_masuk_belakang', 'gerbang_keluar_belakang'); // pintu keluar dua arah
+
+// ── Area Tengah → Timur (GSG / GB / FT) ─────────────────────
+//
+// Aturan:
+//   BOLEH  : simpang_upatik → simpang_gsg  (dari dalam kampus / gb2 / upatik)
+//   BOLEH  : gb2 / upatik  → simpang_gsg   (via simpang_upatik)
+//   BOLEH  : simpang_gsg   → simpang_upatik (balik arah valid — dua arah internal)
+addTwoWayEdge('simpang_upatik', 'simpang_gsg');
+addTwoWayEdge('simpang_fmipa',  'simpang_gb34');
+addTwoWayEdge('simpang_fmipa',  'simpang_gb5');
+addTwoWayEdge('simpang_gsg',    'gsg');
+addTwoWayEdge('simpang_gsg',    'simpang_ft');
+addTwoWayEdge('simpang_ft',     'ft');
+addTwoWayEdge('simpang_gsg',    'simpang_gb34');
+addTwoWayEdge('simpang_gb34',   'gb3');
+addTwoWayEdge('simpang_gb34',   'pkm');
+addTwoWayEdge('simpang_gb34',   'simpang_gb5');
+addTwoWayEdge('simpang_gb5',    'gb5');
+
+// ── Area Timur (FKIP / FKIK / Stadion) ──────────────────────
+addTwoWayEdge('simpang_gb34', 'fkip');
+addTwoWayEdge('fkip',         'danau_fkip');
+addTwoWayEdge('simpang_gb34', 'fkik');
+addTwoWayEdge('simpang_ft',   'stadion');
 
 // ============================================================
-// 3. A* ALGORITHM & OSRM WEIGHTS — UNCHANGED
+// 3. A* ALGORITHM — DIRECTED GRAPH (mengikuti arah edge)
 // ============================================================
 let edgeWeights = {};
 
@@ -116,13 +168,17 @@ function haversine(c1, c2) {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-// Deprecated: edge weight pre-fetch no longer used.
+// Tidak digunakan secara aktif — haversine dipakai sebagai fallback
 async function fetchOSRMDistances() {
-    // Langsung pakai Haversine — tidak perlu fetch OSRM agar tidak loading terus
     console.log('ℹ Menggunakan Haversine distance (tanpa OSRM fetch).');
-    // edgeWeights tetap kosong, A* akan pakai haversine fallback
 }
 
+/**
+ * aStar(startId, endId)
+ * Implementasi A* pada DIRECTED GRAPH.
+ * Hanya menelusuri neighbor sesuai arah edge yang telah didefinisikan —
+ * tidak membuat edge balik secara otomatis.
+ */
 function aStar(startId, endId) {
     const gScore = {}, fScore = {}, prev = {};
     Object.keys(nodes).forEach(id => {
@@ -134,10 +190,7 @@ function aStar(startId, endId) {
     gScore[startId] = 0;
     fScore[startId] = haversine(nodes[startId].coords, nodes[endId].coords);
 
-    const adj = {};
-    Object.keys(nodes).forEach(id => adj[id] = []);
-    edges.forEach(([a,b]) => { adj[a].push(b); adj[b].push(a); });
-
+    // Gunakan `adj` global (directed) — bukan rebuild otomatis dua arah
     const openSet = new Set([startId]);
 
     while (openSet.size > 0) {
@@ -149,9 +202,11 @@ function aStar(startId, endId) {
         if (curr === endId) break;
         openSet.delete(curr);
 
-        adj[curr].forEach(nb => {
+        // Hanya ikuti neighbor dari directed adj[curr]
+        (adj[curr] || []).forEach(nb => {
             let weight = haversine(nodes[curr].coords, nodes[nb].coords);
 
+            // Opsional: pakai bobot OSRM jika tersedia
             if (edgeWeights[curr] && edgeWeights[curr][nb]) {
                 const osrmDist = edgeWeights[curr][nb];
                 if (osrmDist < weight * 2.5) weight = osrmDist;
@@ -159,9 +214,9 @@ function aStar(startId, endId) {
 
             const tentative = gScore[curr] + weight;
             if (tentative < gScore[nb]) {
-                prev[nb]    = curr;
-                gScore[nb]  = tentative;
-                fScore[nb]  = gScore[nb] + haversine(nodes[nb].coords, nodes[endId].coords);
+                prev[nb]   = curr;
+                gScore[nb] = tentative;
+                fScore[nb] = gScore[nb] + haversine(nodes[nb].coords, nodes[endId].coords);
                 openSet.add(nb);
             }
         });
@@ -800,8 +855,10 @@ async function init() {
         });
 
     // ── Graph Info ────────────────────────────────────────────
+    // Hitung edge unik (directed), tampilkan info graph
+    const uniqueEdges = edges.length;
     document.getElementById('graphInfo').textContent =
-        `${Object.keys(nodes).length} Node / ${edges.length} Edge`;
+        `${Object.keys(nodes).length} Node / ${uniqueEdges} Edge`;
 
     // ── Button: Find Path ─────────────────────────────────────
     // OSRM fetch dinonaktifkan — tombol langsung siap dipakai
